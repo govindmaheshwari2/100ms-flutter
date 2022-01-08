@@ -9,7 +9,6 @@ import 'package:hmssdk_flutter_example/common/util/utility_components.dart';
 import 'package:hmssdk_flutter_example/enum/meeting_flow.dart';
 import 'package:hmssdk_flutter_example/meeting/meeting_page.dart';
 import 'package:hmssdk_flutter_example/meeting/meeting_store.dart';
-import 'package:hmssdk_flutter_example/meeting/peerTrackNode.dart';
 import 'package:hmssdk_flutter_example/preview/preview_controller.dart';
 import 'package:hmssdk_flutter_example/preview/preview_store.dart';
 import 'package:mobx/mobx.dart';
@@ -93,10 +92,9 @@ class _PreviewPageState extends State<PreviewPage> with WidgetsBindingObserver {
                             key: UniqueKey(),
                             height: itemHeight,
                             width: itemWidth,
-                            peerTracKNode: new PeerTracKNode(
-                                peerId: _previewStore.peer?.peerId ?? "",
-                                name: _previewStore.peer?.name ?? "",
-                                track: _previewStore.localTracks[0]),
+                            // peerTracKNode: new PeerTracKNode(
+                            //     peer: _previewStore.peer!,
+                            //     track: _previewStore.localTracks[0]),
                             isVideoMuted: false,
                           ),
                         );

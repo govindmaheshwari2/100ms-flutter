@@ -14,7 +14,6 @@ import 'package:hmssdk_flutter_example/enum/meeting_flow.dart';
 import 'package:hmssdk_flutter_example/logs/custom_singleton_logger.dart';
 import 'package:hmssdk_flutter_example/meeting/meeting_controller.dart';
 import 'package:hmssdk_flutter_example/meeting/meeting_store.dart';
-import 'package:hmssdk_flutter_example/meeting/peerTrackNode.dart';
 import 'package:mobx/mobx.dart';
 // ignore: implementation_imports
 import 'package:provider/src/provider.dart';
@@ -201,7 +200,7 @@ class _MeetingPageState extends State<MeetingPage> with WidgetsBindingObserver {
           _meetingStore.setPlayBackAllowed(false);
         } else {
           _meetingStore.peerTracks.forEach((element) {
-            _meetingStore.trackStatus[element.peerId] =
+            _meetingStore.trackStatus[element.peer?.peerId??""] =
                 element.track?.isMute ?? false
                     ? HMSTrackUpdate.trackMuted
                     : HMSTrackUpdate.trackUnMuted;
@@ -425,12 +424,9 @@ class _MeetingPageState extends State<MeetingPage> with WidgetsBindingObserver {
                                       MediaQuery.of(context).size.height / 2,
                                   width: MediaQuery.of(context).size.width,
                                   isVideoMuted: false,
-                                  peerTracKNode: new PeerTracKNode(
-                                      peerId: _meetingStore.screenSharePeerId,
-                                      track: _meetingStore.screenShareTrack!,
-                                      name: _meetingStore
-                                              .screenShareTrack?.peer?.name ??
-                                          ""),
+                                  // peerTracKNode: new PeerTracKNode(
+                                  //     peer: _meetingStore.screenSharePeer!,
+                                  //     track: _meetingStore.screenShareTrack!,),
                                 ),
                               );
                             } else {
@@ -447,18 +443,18 @@ class _MeetingPageState extends State<MeetingPage> with WidgetsBindingObserver {
                                   return Center(
                                       child:
                                           Text('Waiting for others to join!'));
-                                ObservableList<PeerTracKNode> peerFilteredList =
-                                    _meetingStore.isActiveSpeakerMode
-                                        ? _meetingStore
-                                            .activeSpeakerPeerTracksStore
-                                        : _meetingStore.peerTracks;
+                                // ObservableList<PeerTracKNode> peerFilteredList =
+                                //     _meetingStore.isActiveSpeakerMode
+                                //         ? _meetingStore
+                                //             .activeSpeakerPeerTracksStore
+                                //         : _meetingStore.peerTracks;
                                 ObservableMap<String, String> audioKeyMap =
                                     _meetingStore.observableMap;
                                 return GridView.builder(
                                     physics: PageScrollPhysics(),
                                     scrollDirection: Axis.horizontal,
                                     addAutomaticKeepAlives: false,
-                                    itemCount: peerFilteredList.length,
+                                    itemCount:_meetingStore.peerTracks.length,
                                     shrinkWrap: true,
                                     cacheExtent: 0,
                                     gridDelegate:
@@ -471,18 +467,7 @@ class _MeetingPageState extends State<MeetingPage> with WidgetsBindingObserver {
                                       mainAxisExtent: itemWidth,
                                     ),
                                     itemBuilder: (ctx, index) {
-                                      return Observer(builder: (context) {
-                                        ObservableMap<String, HMSTrackUpdate>
-                                            map = _meetingStore.trackStatus;
-                                        print("GRIDVIEW ${map.toString()}");
-                                        return VideoTile(
-                                          tileIndex: index,
-                                          filteredList: peerFilteredList,
-                                          trackStatus: map,
-                                          observerMap: audioKeyMap,
-                                          audioView: audioViewOn,
-                                        );
-                                      });
+                                      return VideoTile(_meetingStore.peerTracks[index]);
                                     });
                               },
                             ),
