@@ -13,45 +13,100 @@ import 'package:provider/src/provider.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class VideoTile extends StatefulWidget {
-  PeerTrackNodeStore peerTrackNodeStore;
 
-  VideoTile(this.peerTrackNodeStore); //  final tileIndex;
- // // final List<PeerTracKNode> filteredList;
- //  final double itemHeight;
- //  final double itemWidth;
- //  final Map<String, HMSTrackUpdate> trackStatus;
- //  final Map<String, String> observerMap;
- //  final bool audioView;
- //  VideoTile({
- //    Key? key,
- //    required this.tileIndex,
- //    required this.filteredList,
- //    this.itemHeight = 200.0,
- //    this.itemWidth = 200.0,
- //    required this.trackStatus,
- //    required this.observerMap,
- //    required this.audioView,
- //  }) : super(key: key);
+ // final List<PeerTracKNode> filteredList;
+  final double itemHeight;
+  final double itemWidth;
+  final PeerTrackNodeStore peerTrackNodeStore;
+  final bool audioView;
+
+  VideoTile({
+    Key? key,
+    this.itemHeight = 200.0,
+    this.itemWidth = 200.0,
+    required this.peerTrackNodeStore,
+    required this.audioView,
+  }) : super(key: key);
 
   @override
   State<VideoTile> createState() => _VideoTileState();
 }
 
 class _VideoTileState extends State<VideoTile> {
-
-
   @override
   Widget build(BuildContext context) {
-    // MeetingStore _meetingStore = context.read<MeetingStore>();
-    // var index = widget.tileIndex;
-    // var filteredList = widget.filteredList;
-    //
-    // if (index >= filteredList.length) return SizedBox();
 
 
-    return Observer(builder: (_){
-      print("rebuilding ${widget.peerTrackNodeStore.peer?.name}");
-      return Text(widget.peerTrackNodeStore.peer?.name??"");
-    });
+    bool mutePermission =
+        widget.peerTrackNodeStore.peer.role?.permissions?.mute ?? false;
+    bool unMutePermission =
+        widget.peerTrackNodeStore.peer.role?.permissions?.unMute ?? false;
+    bool removePeerPermission =
+        widget.peerTrackNodeStore.peer.role?.permissions?.removeOthers ?? false;
+
+
+    return VisibilityDetector(
+      onVisibilityChanged: (VisibilityInfo info) {
+        // if (index >= filteredList.length) return;
+        // var visiblePercentage = info.visibleFraction * 100;
+        // String peerId = filteredList[index].peerId;
+        // if (visiblePercentage <= 40) {
+        //   trackStatus[peerId] = HMSTrackUpdate.trackMuted;
+        // } else {
+        //   trackStatus[peerId] = (widget.audioView)
+        //       ? HMSTrackUpdate.trackMuted
+        //       : filteredList[index].track?.isMute ?? true
+        //       ? HMSTrackUpdate.trackMuted
+        //       : HMSTrackUpdate.trackUnMuted;
+        // }
+      },
+      key: Key(widget.peerTrackNodeStore.uid),
+      child: InkWell(
+        onLongPress: () {
+          if (!mutePermission || !unMutePermission || !removePeerPermission)
+            return;
+          if (!widget.audioView &&
+              (!(widget.peerTrackNodeStore.peer.isLocal)))
+            showDialog(
+                context: context,
+                builder: (_) => Column(
+                  children: [
+                    // ChangeTrackOptionDialog(
+                    //     isAudioMuted:
+                    //     filteredList[index].audioTrack?.isMute,
+                    //     isVideoMuted: filteredList[index].track == null
+                    //         ? true
+                    //         : filteredList[index].track?.isMute,
+                    //     peerName: filteredList[index].name,
+                    //     changeVideoTrack: (mute, isVideoTrack) {
+                    //       Navigator.pop(context);
+                    //       _meetingStore.changeTrackState(
+                    //           filteredList[index].track!, mute);
+                    //     },
+                    //     changeAudioTrack: (mute, isAudioTrack) {
+                    //       Navigator.pop(context);
+                    //       _meetingStore.changeTrackState(
+                    //           filteredList[index].audioTrack!, mute);
+                    //     },
+                    //     removePeer: () async {
+                    //       Navigator.pop(context);
+                    //       var peer = await _meetingStore.getPeer(
+                    //           peerId: filteredList[index].peerId);
+                    //       _meetingStore.removePeerFromRoom(peer!);
+                    //     },
+                    //     mute: mutePermission,
+                    //     unMute: unMutePermission,
+                    //     removeOthers: removePeerPermission),
+                  ],
+                ));
+        },
+        child: PeerItemOrganism(
+          key: Key(widget.peerTrackNodeStore.uid.toString()),
+          height: widget.itemHeight,
+          width: widget.itemWidth,
+          peerTrackNodeStore: widget.peerTrackNodeStore,
+        ),
+      ),
+    );
   }
 }

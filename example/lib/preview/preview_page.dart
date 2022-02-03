@@ -9,6 +9,7 @@ import 'package:hmssdk_flutter_example/common/util/utility_components.dart';
 import 'package:hmssdk_flutter_example/enum/meeting_flow.dart';
 import 'package:hmssdk_flutter_example/meeting/meeting_page.dart';
 import 'package:hmssdk_flutter_example/meeting/meeting_store.dart';
+import 'package:hmssdk_flutter_example/meeting/peer_track_node_store.dart';
 import 'package:hmssdk_flutter_example/preview/preview_controller.dart';
 import 'package:hmssdk_flutter_example/preview/preview_store.dart';
 import 'package:mobx/mobx.dart';
@@ -39,11 +40,12 @@ class _PreviewPageState extends State<PreviewPage> with WidgetsBindingObserver {
     super.initState();
     initPreview();
     reaction(
-        (_) => _previewStore.error,
-        (event) => {
-              UtilityComponents.showSnackBarWithString(
-                  (event as HMSException).message, context)
-            });
+            (_) => _previewStore.error,
+            (event) =>
+        {
+          UtilityComponents.showSnackBarWithString(
+              (event as HMSException).message, context)
+        });
   }
 
   void initPreview() async {
@@ -57,7 +59,9 @@ class _PreviewPageState extends State<PreviewPage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    var size = MediaQuery.of(context).size;
+    var size = MediaQuery
+        .of(context)
+        .size;
     final double itemHeight = (size.height - kToolbarHeight - 24);
     final double itemWidth = size.width;
 
@@ -88,14 +92,12 @@ class _PreviewPageState extends State<PreviewPage> with WidgetsBindingObserver {
                         return Provider<MeetingStore>(
                           create: (ctx) => MeetingStore(),
                           child: PeerItemOrganism(
-                            observableMap: {"highestAudio": ""},
-                            key: UniqueKey(),
                             height: itemHeight,
                             width: itemWidth,
-                            // peerTracKNode: new PeerTracKNode(
-                            //     peer: _previewStore.peer!,
-                            //     track: _previewStore.localTracks[0]),
-                            isVideoMuted: false,
+                            peerTrackNodeStore: new PeerTrackNodeStore(
+                                peer: _previewStore.peer!,
+                                uid: _previewStore.peer!.peerId,
+                                track: _previewStore.localTracks[0]),
                           ),
                         );
                       },
@@ -125,33 +127,35 @@ class _PreviewPageState extends State<PreviewPage> with WidgetsBindingObserver {
                       ),
                       Expanded(
                           child: ElevatedButton(
-                        onPressed: () {
-                          _previewStore.removeListener();
-                          Navigator.of(context)
-                              .pushReplacement(MaterialPageRoute(
-                                  builder: (_) => Provider<MeetingStore>(
+                            onPressed: () {
+                              _previewStore.removeListener();
+                              Navigator.of(context)
+                                  .pushReplacement(MaterialPageRoute(
+                                  builder: (_) =>
+                                      Provider<MeetingStore>(
                                         create: (_) => MeetingStore(),
                                         child: MeetingPage(
                                             roomId: widget.roomId,
                                             flow: widget.flow,
                                             user: widget.user),
                                       )));
-                        },
-                        child: Text(
-                          'Join Now',
-                          style: TextStyle(height: 1, fontSize: 18),
-                        ),
-                      )),
+                            },
+                            child: Text(
+                              'Join Now',
+                              style: TextStyle(height: 1, fontSize: 18),
+                            ),
+                          )),
                       Observer(builder: (context) {
                         return Expanded(
                             child: GestureDetector(
-                          onTap: () async {
-                            _previewStore.switchAudio();
-                          },
-                          child: Icon(
-                              _previewStore.audioOn ? Icons.mic : Icons.mic_off,
-                              size: 48),
-                        ));
+                              onTap: () async {
+                                _previewStore.switchAudio();
+                              },
+                              child: Icon(
+                                  _previewStore.audioOn ? Icons.mic : Icons
+                                      .mic_off,
+                                  size: 48),
+                            ));
                       })
                     ],
                   ),

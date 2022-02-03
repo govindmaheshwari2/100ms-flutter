@@ -43,7 +43,7 @@ abstract class MeetingStoreBase extends ChangeNotifier
   @observable
   bool isScreenShareOn = false;
   @observable
-  HMSTrack? screenShareTrack;
+  HMSVideoTrack? screenShareTrack;
   @observable
   bool reconnecting = false;
   @observable
@@ -261,16 +261,19 @@ abstract class MeetingStoreBase extends ChangeNotifier
     hmsRoom = room;
     if (Platform.isAndroid) {
       print("members ${room.peers!.length}");
-      for (HMSPeer each in room.peers!) {
-        if (each.isLocal) {
-          int index = peerTracks
-              .indexWhere((element) => element.peer?.peerId == each.peerId);
-          if (index == -1) peerTracks.add(PeerTrackNodeStore(peer: each));
-          localPeer = each;
-          addPeer(localPeer!);
-          print('on join ${localPeer!.peerId}');
-          break;
-        }
+      HMSPeer each = room.hmsLocalPeer;
+      if (each.isLocal) {
+        int index = peerTracks
+            .indexWhere((element) => element.uid == each.peerId+"mainVideo");
+        if (index == -1)
+          peerTracks.add(PeerTrackNodeStore(
+            peer: each,
+            uid: each.peerId + "mainVideo",
+          ));
+        localPeer = each;
+        addPeer(localPeer!);
+        print('on join ${localPeer!.peerId}');
+
       }
     } else {
       for (HMSPeer each in room.peers!) {
@@ -310,50 +313,41 @@ abstract class MeetingStoreBase extends ChangeNotifier
       {required HMSTrack track,
       required HMSTrackUpdate trackUpdate,
       required HMSPeer peer}) {
-    print("ontrackUpdate");
-    peerTracks[0].peer = peer;
-    // print("${peer.name} ${track.kind} onTrackUpdateFlutterMeetingStore");
-    // if (isSpeakerOn) {
-    //   unMuteAll();
-    // } else {
-    //   muteAll();
-    // }
-    //
-    // if (peer.isLocal &&
-    //     trackUpdate == HMSTrackUpdate.trackMuted &&
-    //     track.kind == HMSTrackKind.kHMSTrackKindAudio) {
-    //   this.isMicOn = false;
-    // }
-    //
-    // if (peer.isLocal) {
-    //   localPeer = peer;
-    //
-    //   if (track.kind == HMSTrackKind.kHMSTrackKindVideo) {
-    //     print("LOCALPEERTRACKVideo");
-    //     localTrack = track;
-    //     if (track.isMute) {
-    //       this.isVideoOn = false;
-    //     }
-    //   }
-    // }
-    //
-    // if (track.kind == HMSTrackKind.kHMSTrackKindAudio) {
-    //   int index = peerTracks
-    //       .indexWhere((element) => element.peer.peerId == peer.peerId);
-    //   peerTracks[index].audioTrack = track;
-    //   return;
-    // }
-    // if (track.source == "REGULAR") {
-    //   int index = peerTracks
-    //       .indexWhere((element) => element.peer.peerId == peer.peerId);
-    //   print(
-    //       "onTrackUpdateFlutter ${peerTracks[index].track?.isMute} ${peer.name} before");
-    //   peerTracks[index].track = track;
-    //   print(
-    //       "onTrackUpdateFlutter ${peerTracks[index].track?.isMute} ${peer.name} after");
-    // }
-    //
-    // peerOperationWithTrack(peer, trackUpdate, track);
+    if (isSpeakerOn) {
+      unMuteAll();
+    } else {
+      muteAll();
+    }
+
+    if (peer.isLocal &&
+        trackUpdate == HMSTrackUpdate.trackMuted &&
+        track.kind == HMSTrackKind.kHMSTrackKindAudio) {
+      this.isMicOn = false;
+    }
+
+    if (peer.isLocal) {
+      localPeer = peer;
+
+      if (track.kind == HMSTrackKind.kHMSTrackKindVideo) {
+        localTrack = track;
+        if (track.isMute) {
+          this.isVideoOn = false;
+        }
+      }
+    }
+
+    if (track.kind == HMSTrackKind.kHMSTrackKindAudio) return;
+
+    if (track.source == "REGULAR") {
+      int index = peerTracks
+          .indexWhere((element) => element.uid == peer.peerId + "mainVideo");
+      if (index != -1)
+        peerTracks[index].track = track as HMSVideoTrack;
+      else
+        return;
+    }
+
+    peerOperationWithTrack(peer, trackUpdate, track);
   }
 
   @override
@@ -379,9 +373,9 @@ abstract class MeetingStoreBase extends ChangeNotifier
 
   @override
   void onUpdateSpeakers({required List<HMSSpeaker> updateSpeakers}) {
-    if(updateSpeakers.length==0)return;
+    if (updateSpeakers.length == 0) return;
     print("OnUpdateSpeaker");
-    peerTracks[0].peer=updateSpeakers[0].peer;
+    peerTracks[0].peer = updateSpeakers[0].peer;
     // if (!isActiveSpeakerMode) {
     //   if (updateSpeakers.length == 0) {
     //     peerTracks.removeAt(highestSpeakerIndex);
@@ -487,16 +481,18 @@ abstract class MeetingStoreBase extends ChangeNotifier
       case HMSPeerUpdate.peerJoined:
         print('peer joined');
         int index = peerTracks
-            .indexWhere((element) => element.peer?.peerId == peer.peerId);
+            .indexWhere((element) => element.uid == peer.peerId+"mainVideo");
         if (index == -1)
           peerTracks.add(PeerTrackNodeStore(
             peer: peer,
+            uid: peer.peerId + "mainVideo",
           ));
         addPeer(peer);
         break;
       case HMSPeerUpdate.peerLeft:
         print('peer left');
-        peerTracks.removeWhere((element) => element.peer?.peerId == peer.peerId);
+        peerTracks
+            .removeWhere((element) => element.uid == peer.peerId+"mainVideo");
         removePeer(peer);
         break;
       case HMSPeerUpdate.peerKnocked:
@@ -513,13 +509,13 @@ abstract class MeetingStoreBase extends ChangeNotifier
         updatePeerAt(peer);
         break;
       case HMSPeerUpdate.metadataChanged:
-        //int index =
-        //peerTracks.indexWhere((element) => element.peerId == peer.peerId);
-        // if (index != -1 && peer.metadata == "{\"isHandRaised\":true}")
-        //   peerTracks[index] = true;
-        // else if (index != -1 && peer.metadata == "{\"isHandRaised\":false}") {
-        //   peerTracks[index].isRaiseHand = false;
-        // }
+        int index =
+        peerTracks.indexWhere((element) => element.uid == peer.peerId+"mainVideo");
+        if (index != -1 && peer.metadata == "{\"isHandRaised\":true}")
+          peerTracks[index].peer=peer;
+        else if (index != -1 && peer.metadata == "{\"isHandRaised\":false}") {
+          peerTracks[index].peer=peer;
+        }
         updatePeerAt(peer);
         break;
       case HMSPeerUpdate.nameChanged:
@@ -536,53 +532,50 @@ abstract class MeetingStoreBase extends ChangeNotifier
   @action
   void peerOperationWithTrack(
       HMSPeer peer, HMSTrackUpdate update, HMSTrack track) {
-    print("onTrackUpdateFlutter $update ${peer.name} update");
 
-    //
-    //
-    // switch (update) {
-    //   case HMSTrackUpdate.trackAdded:
-    //     if (track.source == "REGULAR") {
-    //       trackStatus[peer.peerId] = track.isMute
-    //           ? HMSTrackUpdate.trackMuted
-    //           : HMSTrackUpdate.trackUnMuted;
-    //       print("${trackStatus[peer.peerId]} trackStatusOfPeer");
-    //     } else {
-    //       screenSharePeer = peer;
-    //       screenShareTrack = track;
-    //     }
-    //     print("peerOperationWithTrack ${track.isMute}");
-    //     break;
-    //   case HMSTrackUpdate.trackRemoved:
-    //     print("peerOperationWithTrack ${peerTracks.toString()}");
-    //     if (track.source != "REGULAR") {
-    //       screenSharePeer = null;
-    //       screenShareTrack = null;
-    //     } else {
-    //       peerTracks
-    //           .removeWhere((element) => element.peer.peerId == peer.peerId);
-    //       print("peerOperationWithTrack ${peerTracks.toString()}");
-    //     }
-    //     break;
-    //   case HMSTrackUpdate.trackMuted:
-    //     trackStatus[peer.peerId] = HMSTrackUpdate.trackMuted;
-    //     print("peerOperationWithTrackMute ${track.isMute}");
-    //     break;
-    //   case HMSTrackUpdate.trackUnMuted:
-    //     trackStatus[peer.peerId] = HMSTrackUpdate.trackUnMuted;
-    //     print("peerOperationWithTrackUnmute ${track.isMute}");
-    //     break;
-    //   case HMSTrackUpdate.trackDescriptionChanged:
-    //     break;
-    //   case HMSTrackUpdate.trackDegraded:
-    //     break;
-    //   case HMSTrackUpdate.trackRestored:
-    //     break;
-    //   case HMSTrackUpdate.defaultUpdate:
-    //     break;
-    //   default:
-    //     print("Some default update or untouched case");
-    // }
+    switch (update) {
+      case HMSTrackUpdate.trackAdded:
+        if (track.source == "REGULAR") {
+          // trackStatus[peer.peerId] = track.isMute
+          //     ? HMSTrackUpdate.trackMuted
+          //     : HMSTrackUpdate.trackUnMuted;
+          //print("${trackStatus[peer.peerId]} trackStatusOfPeer");
+        } else {
+          screenSharePeer = peer;
+          screenShareTrack = track as HMSVideoTrack;
+        }
+        print("peerOperationWithTrack ${track.isMute}");
+        break;
+      case HMSTrackUpdate.trackRemoved:
+        print("peerOperationWithTrack ${peerTracks.toString()}");
+        if (track.source != "REGULAR") {
+          screenSharePeer = null;
+          screenShareTrack = null;
+        } else {
+          peerTracks
+              .removeWhere((element) => element.uid == peer.peerId+"mainVideo");
+          print("peerOperationWithTrack ${peerTracks.toString()}");
+        }
+        break;
+      case HMSTrackUpdate.trackMuted:
+        //trackStatus[peer.peerId] = HMSTrackUpdate.trackMuted;
+        //print("peerOperationWithTrackMute ${track.isMute}");
+        break;
+      case HMSTrackUpdate.trackUnMuted:
+        //trackStatus[peer.peerId] = HMSTrackUpdate.trackUnMuted;
+        //print("peerOperationWithTrackUnmute ${track.isMute}");
+        break;
+      case HMSTrackUpdate.trackDescriptionChanged:
+        break;
+      case HMSTrackUpdate.trackDegraded:
+        break;
+      case HMSTrackUpdate.trackRestored:
+        break;
+      case HMSTrackUpdate.defaultUpdate:
+        break;
+      default:
+        print("Some default update or untouched case");
+    }
   }
 
   Future<bool> endRoom(bool lock) async {

@@ -13,35 +13,35 @@ class HMSTrack {
   final bool isHighestAudio;
   final bool isMute;
 
-  const HMSTrack(
-      {required this.trackId,
-      required this.kind,
-      required this.source,
-      required this.trackDescription,
-      this.peer,
-      required this.isMute,
-      this.isHighestAudio = false});
+  const HMSTrack({required this.trackId,
+    required this.kind,
+    required this.source,
+    required this.trackDescription,
+    this.peer,
+    required this.isMute,
+    this.isHighestAudio = false});
 
   factory HMSTrack.fromMap({required Map map, HMSPeer? peer}) {
-    return HMSTrack(
+    HMSTrackKind hmsTrackKind = HMSTrackKindValue.getHMSTrackKindFromName(
+        map['track_kind']);
+    if (hmsTrackKind == HMSTrackKind.kHMSTrackKindVideo) {
+      return HMSVideoTrack(trackId: map['track_id'],
+          kind: hmsTrackKind,
+          source: map['track_source'],
+          trackDescription: map['track_description'],
+          peer: peer,
+          isMute: map['track_mute']);
+    }
+
+    return HMSAudioTrack(
         trackId: map['track_id'],
         trackDescription: map['track_description'],
         source: map['track_source'],
-        kind: HMSTrackKindValue.getHMSTrackKindFromName(map['track_kind']),
+        kind: hmsTrackKind,
         peer: peer,
         isMute: map['track_mute']);
   }
 
-  factory HMSTrack.copyWith(bool? isHighest, {required HMSTrack track}) {
-    return HMSTrack(
-        kind: track.kind,
-        source: track.source,
-        trackId: track.trackId,
-        trackDescription: track.trackDescription,
-        isHighestAudio: isHighest ?? track.isHighestAudio,
-        peer: track.peer,
-        isMute: track.isMute);
-  }
 
   static List<HMSTrack> getHMSTracksFromList(
       {required List listOfMap, HMSPeer? peer}) {
@@ -57,16 +57,17 @@ class HMSTrack {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is HMSTrack &&
-          runtimeType == other.runtimeType &&
-          trackId == other.trackId &&
-          peer?.peerId == other.peer?.peerId;
+          other is HMSTrack &&
+              runtimeType == other.runtimeType &&
+              trackId == other.trackId &&
+              peer?.peerId == other.peer?.peerId;
 
   @override
   int get hashCode => trackId.hashCode;
 
   @override
   String toString() {
-    return 'HMSTrack{trackId: $trackId, kind: $kind, source: $source, trackDescription: $trackDescription, peer: ${peer?.name}, isHighestAudio: $isHighestAudio, isMute: $isMute}';
+    return 'HMSTrack{trackId: $trackId, kind: $kind, source: $source, trackDescription: $trackDescription, peer: ${peer
+        ?.name}, isHighestAudio: $isHighestAudio, isMute: $isMute}';
   }
 }

@@ -15,9 +15,11 @@ import 'package:hmssdk_flutter_example/logs/custom_singleton_logger.dart';
 import 'package:hmssdk_flutter_example/meeting/meeting_controller.dart';
 import 'package:hmssdk_flutter_example/meeting/meeting_store.dart';
 import 'package:mobx/mobx.dart';
+
 // ignore: implementation_imports
 import 'package:provider/src/provider.dart';
 import 'meeting_participants_list.dart';
+import 'peer_track_node_store.dart';
 
 class MeetingPage extends StatefulWidget {
   final String roomId;
@@ -48,6 +50,7 @@ class _MeetingPageState extends State<MeetingPage> with WidgetsBindingObserver {
   bool audioViewOn = false;
   int countOfVideoOnBetweenTwo = 1;
   bool videoPreviousState = false;
+
   @override
   void initState() {
     super.initState();
@@ -200,7 +203,7 @@ class _MeetingPageState extends State<MeetingPage> with WidgetsBindingObserver {
           _meetingStore.setPlayBackAllowed(false);
         } else {
           _meetingStore.peerTracks.forEach((element) {
-            _meetingStore.trackStatus[element.peer?.peerId??""] =
+            _meetingStore.trackStatus[element.peer.peerId] =
                 element.track?.isMute ?? false
                     ? HMSTrackUpdate.trackMuted
                     : HMSTrackUpdate.trackUnMuted;
@@ -419,15 +422,17 @@ class _MeetingPageState extends State<MeetingPage> with WidgetsBindingObserver {
                                 height:
                                     MediaQuery.of(context).size.height / 2.5,
                                 child: PeerItemOrganism(
-                                  observableMap: {"highestAudio": ""},
-                                  height:
-                                      MediaQuery.of(context).size.height / 2,
-                                  width: MediaQuery.of(context).size.width,
-                                  isVideoMuted: false,
-                                  // peerTracKNode: new PeerTracKNode(
-                                  //     peer: _meetingStore.screenSharePeer!,
-                                  //     track: _meetingStore.screenShareTrack!,),
-                                ),
+                                    height:
+                                        MediaQuery.of(context).size.height / 2,
+                                    width: MediaQuery.of(context).size.width,
+                                    peerTrackNodeStore: new PeerTrackNodeStore(
+                                        peer: _meetingStore.screenSharePeer!,
+                                        uid: _meetingStore
+                                                .screenSharePeer!.peerId +
+                                            _meetingStore
+                                                .screenShareTrack!.trackId,
+                                        track:
+                                            _meetingStore.screenShareTrack!)),
                               );
                             } else {
                               return Container();
@@ -443,32 +448,12 @@ class _MeetingPageState extends State<MeetingPage> with WidgetsBindingObserver {
                                   return Center(
                                       child:
                                           Text('Waiting for others to join!'));
-                                // ObservableList<PeerTracKNode> peerFilteredList =
-                                //     _meetingStore.isActiveSpeakerMode
-                                //         ? _meetingStore
-                                //             .activeSpeakerPeerTracksStore
-                                //         : _meetingStore.peerTracks;
-                                ObservableMap<String, String> audioKeyMap =
-                                    _meetingStore.observableMap;
-                                return GridView.builder(
-                                    physics: PageScrollPhysics(),
-                                    scrollDirection: Axis.horizontal,
-                                    addAutomaticKeepAlives: false,
-                                    itemCount:_meetingStore.peerTracks.length,
-                                    shrinkWrap: true,
-                                    cacheExtent: 0,
-                                    gridDelegate:
-                                        SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: (!audioViewOn &&
-                                              _meetingStore.screenShareTrack !=
-                                                  null)
-                                          ? 1
-                                          : 2,
-                                      mainAxisExtent: itemWidth,
-                                    ),
-                                    itemBuilder: (ctx, index) {
-                                      return VideoTile(_meetingStore.peerTracks[index]);
-                                    });
+
+                                return TileListWidget(
+                                  meetingStore: _meetingStore,
+                                  audioViewOn: audioViewOn,
+                                  itemWidth: itemWidth,
+                                );
                               },
                             ),
                           ),
@@ -549,7 +534,7 @@ class _MeetingPageState extends State<MeetingPage> with WidgetsBindingObserver {
                                 tooltip: 'Leave Or End',
                                 iconSize: 32,
                                 onPressed: () async {
-                                  String ans = await showDialog(
+                                  await showDialog(
                                       context: context,
                                       builder: (_) =>
                                           LeaveOrEndMeetingDialogOption(
@@ -586,5 +571,46 @@ class _MeetingPageState extends State<MeetingPage> with WidgetsBindingObserver {
         _meetingStore.meetingController.stopCapturing();
       }
     }
+  }
+}
+
+class TileListWidget extends StatelessWidget {
+  final MeetingStore meetingStore;
+  final bool audioViewOn;
+  final double itemWidth;
+
+  const TileListWidget(
+      {Key? key,
+      required this.meetingStore,
+      required this.audioViewOn,
+      required this.itemWidth})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.builder(
+        physics: PageScrollPhysics(),
+        scrollDirection: Axis.horizontal,
+        addAutomaticKeepAlives: false,
+        itemCount: meetingStore.peerTracks.length,
+        shrinkWrap: true,
+        cacheExtent: 0,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount:
+              (!audioViewOn && meetingStore.screenShareTrack != null) ? 1 : 2,
+          mainAxisExtent: itemWidth,
+        ),
+        itemBuilder: (ctx, index) {
+          List<PeerTrackNodeStore> peerTrackNodeStoreList =
+              meetingStore.peerTracks;
+          PeerTrackNodeStore peerTrackNodeStore = peerTrackNodeStoreList[index];
+          return Observer(builder: (context) {
+            print("${peerTrackNodeStore.toString()} buildingTile $index");
+            return VideoTile(
+              audioView: audioViewOn,
+              peerTrackNodeStore: peerTrackNodeStore,
+            );
+          });
+        });
   }
 }

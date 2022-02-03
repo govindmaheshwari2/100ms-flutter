@@ -9,23 +9,24 @@ class PeerTrackNodeStore = PeerTracKNodeStoreBase with _$PeerTrackNodeStore;
 abstract class PeerTracKNodeStoreBase with Store{
 
   @observable
-  HMSPeer? peer;
+  HMSPeer peer;
+
+  String uid;
 
   @observable
-  HMSTrack? track;
+  HMSVideoTrack? track;
 
-  @observable
-  HMSTrack? audioTrack;
 
-  PeerTracKNodeStoreBase({this.peer, this.track, this.audioTrack});
+
+  PeerTracKNodeStoreBase({required this.peer, this.track,required this.uid});
 
 
 
   @override
   String toString() {
-    return 'PeerTracKNode{peerId: ${peer?.peerId}, name: ${peer?.name}, track: $track}';
+    return 'PeerTracKNode{peerId: ${peer.peerId}, name: ${peer.name}, track: $track}';
   }
 
   @override
-  int get hashCode => peer?.peerId.hashCode??0;
+  int get hashCode => peer.peerId.hashCode;
 }
