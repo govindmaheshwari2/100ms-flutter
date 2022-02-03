@@ -511,10 +511,13 @@ abstract class MeetingStoreBase extends ChangeNotifier
       case HMSPeerUpdate.metadataChanged:
         int index =
         peerTracks.indexWhere((element) => element.uid == peer.peerId+"mainVideo");
-        if (index != -1 && peer.metadata == "{\"isHandRaised\":true}")
-          peerTracks[index].peer=peer;
+        if (index != -1 && peer.metadata == "{\"isHandRaised\":true}") {
+          PeerTrackNodeStore peerTrackNodeStore = peerTracks[index];
+          peerTrackNodeStore.peer = peer;
+        }
         else if (index != -1 && peer.metadata == "{\"isHandRaised\":false}") {
-          peerTracks[index].peer=peer;
+          PeerTrackNodeStore peerTrackNodeStore = peerTracks[index];
+          peerTrackNodeStore.peer = peer;
         }
         updatePeerAt(peer);
         break;

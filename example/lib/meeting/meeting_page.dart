@@ -449,11 +449,39 @@ class _MeetingPageState extends State<MeetingPage> with WidgetsBindingObserver {
                                       child:
                                           Text('Waiting for others to join!'));
 
-                                return TileListWidget(
-                                  meetingStore: _meetingStore,
-                                  audioViewOn: audioViewOn,
-                                  itemWidth: itemWidth,
-                                );
+                                return GridView.builder(
+                                    physics: PageScrollPhysics(),
+                                    scrollDirection: Axis.horizontal,
+                                    addAutomaticKeepAlives: false,
+                                    itemCount: _meetingStore.peerTracks.length,
+                                    shrinkWrap: true,
+                                    cacheExtent: 0,
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: (!audioViewOn &&
+                                              _meetingStore.screenShareTrack !=
+                                                  null)
+                                          ? 1
+                                          : 2,
+                                      mainAxisExtent: itemWidth,
+                                    ),
+                                    itemBuilder: (ctx, index) {
+
+                                      return Observer(builder: (context) {
+                                        List<PeerTrackNodeStore>
+                                        peerTrackNodeStoreList =
+                                            _meetingStore.peerTracks;
+                                        PeerTrackNodeStore peerTrackNodeStore =
+                                        peerTrackNodeStoreList[index];
+                                        print(
+                                            "${peerTrackNodeStore.peer.name} buildingVideoTile");
+                                        return VideoTile(
+                                          audioView: audioViewOn,
+                                          peerTrackNodeStore:
+                                              peerTrackNodeStore,
+                                        );
+                                      });
+                                    });
                               },
                             ),
                           ),
@@ -571,46 +599,5 @@ class _MeetingPageState extends State<MeetingPage> with WidgetsBindingObserver {
         _meetingStore.meetingController.stopCapturing();
       }
     }
-  }
-}
-
-class TileListWidget extends StatelessWidget {
-  final MeetingStore meetingStore;
-  final bool audioViewOn;
-  final double itemWidth;
-
-  const TileListWidget(
-      {Key? key,
-      required this.meetingStore,
-      required this.audioViewOn,
-      required this.itemWidth})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-        physics: PageScrollPhysics(),
-        scrollDirection: Axis.horizontal,
-        addAutomaticKeepAlives: false,
-        itemCount: meetingStore.peerTracks.length,
-        shrinkWrap: true,
-        cacheExtent: 0,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount:
-              (!audioViewOn && meetingStore.screenShareTrack != null) ? 1 : 2,
-          mainAxisExtent: itemWidth,
-        ),
-        itemBuilder: (ctx, index) {
-          List<PeerTrackNodeStore> peerTrackNodeStoreList =
-              meetingStore.peerTracks;
-          PeerTrackNodeStore peerTrackNodeStore = peerTrackNodeStoreList[index];
-          return Observer(builder: (context) {
-            print("${peerTrackNodeStore.toString()} buildingTile $index");
-            return VideoTile(
-              audioView: audioViewOn,
-              peerTrackNodeStore: peerTrackNodeStore,
-            );
-          });
-        });
   }
 }
