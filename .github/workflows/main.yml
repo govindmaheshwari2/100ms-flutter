@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    - name: Putting data
+    env: DATA: ${{ secrets.GOOGLE_SERVICES_JSON }}
+    - run: echo $DATA > /home/runner/work/100ms-flutter-test/100ms-flutter-test/example/android/app/google-services.json
     defaults:
       run:
         working-directory: ./example
@@ -20,10 +23,6 @@ jobs:
       with:
         distribution: 'zulu'
         java-version: '11'
-    - name: Putting data
-      env:
-        DATA: ${{ secrets.GOOGLE_SERVICES_JSON }}
-    - run: echo $DATA > /home/runner/work/100ms-flutter-test/100ms-flutter-test/example/android/app/google-services.json
     - run: flutter pub get
     - run: pwd
     - run: ls
