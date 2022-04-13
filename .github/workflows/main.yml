@@ -13,7 +13,7 @@ jobs:
         working-directory: ./example
     steps:
     - name: Putting data
-      with:
+      env:
         credentials: ${{ secrets.GOOGLE_SERVICES_JSON }}
     - run: echo $credentials > /home/runner/work/100ms-flutter-test/100ms-flutter-test/example/android/app/google-services.json
 
