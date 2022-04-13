@@ -8,13 +8,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    - name: Putting data
-    env: DATA: ${{ secrets.GOOGLE_SERVICES_JSON }}
-    - run: echo $DATA > /home/runner/work/100ms-flutter-test/100ms-flutter-test/example/android/app/google-services.json
     defaults:
       run:
         working-directory: ./example
     steps:
+    - name: Putting data
+      with:
+        credentials: ${{ secrets.GOOGLE_SERVICES_JSON }}
+    - run: echo $credentials > /home/runner/work/100ms-flutter-test/100ms-flutter-test/example/android/app/google-services.json
+
     - uses: actions/checkout@v1
     - uses: subosito/flutter-action@v2
       with:
