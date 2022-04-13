@@ -232,6 +232,7 @@ class _MeetingPageState extends State<MeetingPage>
           disableInteraction: true,
           offlineWidget: OfflineWidget(),
           child: Selector<MeetingStore, Tuple2<bool, bool>>(
+            
             selector: (_, meetingStore) =>
                 Tuple2(meetingStore.reconnecting, meetingStore.isRoomEnded),
             builder: (_, data, __) {
