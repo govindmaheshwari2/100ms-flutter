@@ -37,12 +37,12 @@ jobs:
       env:
           KEY_PROPERTIES: ${{ secrets.KEY_PROPERTIES }}
           
+    - run: |
+        echo "$FASTLANE_ANDROID" > Fastfile.b64
+        base64 -d -i Fastfile.b64 > fastlane/Fastfile
+      env:
+          FASTLANE_ANDROID: ${{ secrets.FASTLANE_ANDROID }}
+          
     - run: flutter pub get
-    - run: pwd
-    - run: ls
-    - run: flutter build apk --release
-    
-    - uses: actions/upload-artifact@v1
-      with:
-        name: release-apk
-        path: example/build/app/outputs/apk/release/app-release.apk
+    - run: bundle install --verbose
+    - run: bundle exec fastlane release_on_firebase 
