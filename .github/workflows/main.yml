@@ -47,4 +47,5 @@ jobs:
     - run: flutter pub get
     - run: gradle wrapper
     - run: bundle install --verbose
+    - run: fastlane add_plugin firebase_app_distribution
     - run: bundle exec fastlane release_on_firebase 
