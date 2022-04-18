@@ -1,5 +1,6 @@
 name: 100ms-flutter
 
+
 on:
   push:
     branches:
@@ -10,11 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./example
+        working-directory: ./example/android
     steps:
-    - name: Putting data
-      env:
-        credentials: ${{ secrets.GOOGLE_SERVICES_JSON }}
     - uses: actions/checkout@v1
     - uses: subosito/flutter-action@v2
       with:
@@ -23,7 +21,23 @@ jobs:
       with:
         distribution: 'zulu'
         java-version: '11'
-    - run: echo $credentials > /home/runner/work/100ms-flutter-test/100ms-flutter-test/example/android/app/google-services.json
+    - run: |
+        echo "$GOOGLE_SERVICES_JSON" > firebase_credentials.json.b64
+        base64 -d -i firebase_credentials.json.b64 > app/google-services.json
+      env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+    - run: |
+        echo "$STORE_KEY" > 100msKeyStore.b64
+        base64 -d -i 100msKeyStore.b64 > app/100msKeyStore
+      env:
+          STORE_KEY: ${{ secrets.STORE_KEY }}
+          
+    - run: |
+        echo "$KEY_PROPERTIES" > key.properties.b64
+        base64 -d -i key.properties.b64 > key.properties
+      env:
+          KEY_PROPERTIES: ${{ secrets.KEY_PROPERTIES }}
+          
     - run: flutter pub get
     - run: pwd
     - run: ls
